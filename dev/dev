@@ -1,0 +1,92 @@
+#!/bin/bash
+
+BASE_DIR=$(dirname "$0")
+DOCKER_COMPOSE="docker-compose -f $BASE_DIR/docker/docker-compose.yml -f $BASE_DIR/docker/docker-compose.override.yml"
+WEB_CONTAINER="shopware5-web"
+
+_install_sw () {
+  $DOCKER_COMPOSE exec $WEB_CONTAINER php recovery/install/index.php --no-interaction --quiet --no-skip-import --db-host="shopware5-db" --db-user="root" --db-password="root" --db-name="shopware5" --shop-locale="de_DE" --shop-host="shopware5.dev.localhost" --shop-path="/" --shop-name="SHOPNAME" --shop-email="admin@rndmail.de" --shop-currency="EUR" --admin-username="admin" --admin-password="admin" --admin-email="admin@rndmail.de" --admin-name="admin" --admin-locale="de_DE";
+}
+
+dev_init () {
+  dev_up;
+  dev_deps;
+  _import_sql;
+  dev_cache;
+}
+
+_import_sql () {
+  # unzip -nq ./dev/setup/c1shopware5blu1.sql.gz -d ./dev/setup
+  $DOCKER_COMPOSE exec $WEB_CONTAINER bash -c "cd dev/setup && mysql -hshopware5-db -uroot -proot shopware5 < c1shopware5blu1.sql.gz";
+  # rm ./dev/setup/hazet-full.sql
+}
+
+dev_import_sql() {
+  _import_sql
+}
+
+dev_up () {
+  $DOCKER_COMPOSE up -d;
+}
+
+dev_build () {
+  $DOCKER_COMPOSE build;
+}
+
+dev_down () {
+  $DOCKER_COMPOSE down;
+}
+
+dev_deps () {
+  $DOCKER_COMPOSE exec shopware5-web composer install --no-dev --no-scripts;
+}
+
+dev_cache () {
+  $DOCKER_COMPOSE exec shopware5-web php bin/console sw:cache:clear;
+  $DOCKER_COMPOSE exec shopware5-web php bin/console sw:generate:attributes;
+}
+
+dev_bash () {
+  $DOCKER_COMPOSE exec shopware5-web bash;
+}
+
+dev_chmod () {
+  chmod -R 777 dev/docker/data/mysql;
+  chmod -R 777 dev/docker/log;
+  chmod -R 777 custom/plugins;
+  chmod -R 777 engine/Shopware/Plugins;
+  chmod -R 777 files;
+  chmod -R 777 media;
+  chmod -R 777 var;
+  chmod -R 777 web;
+  chmod +x bin/console;
+  chmod 777 themes/Frontend;
+  chmod -R 777 recovery;
+  chmod 777 config.php;
+  chmod -R 777 vendor/egulias/email-validator;
+}
+
+# dev_grunt_install () {
+#   $DOCKER_COMPOSE exec shopware5-web bash -c "cd themes && npm install";
+# }
+
+# dev_grunt () {
+#   if [ ! -z "$1" ]
+#     then
+#       $DOCKER_COMPOSE exec shopware5-web bash -c "cd var/cache && ./clear_cache.sh && chmod -R 777 ./ && cd ../.. && bin/console sw:theme:dump:configuration && cd themes && grunt --shopId=$1";
+#     else
+#       $DOCKER_COMPOSE exec shopware5-web bash -c "cd var/cache && ./clear_cache.sh && chmod -R 777 ./ && cd ../.. && bin/console sw:theme:dump:configuration && cd themes && grunt";
+#   fi
+# }
+
+function_exists() {
+    declare -f -F $1 > /dev/null
+    return $?
+}
+
+if function_exists "dev_$1"
+  then
+    "dev_$1" "$2";
+  else
+    echo "Task not found";
+fi

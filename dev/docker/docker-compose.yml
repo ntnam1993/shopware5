@@ -1,0 +1,26 @@
+version: '3.7'
+
+services:
+  shopware5-web:
+    build:
+      context: dockerfiles/web
+    container_name: shopware5-web
+    volumes:
+      - ../../:/var/www/html:cached
+      - ./config/apache2/vhost.conf:/etc/apache2/sites-available/000-default.conf:cached
+      - ./log/apache2/:/var/log/apache2/:delegated
+      - ./config/php/generic.ini:/usr/local/etc/php/conf.d/001-generic.ini:cached
+      - ./log/php/:/var/log/php/:delegated
+
+  shopware5-db:
+    container_name: shopware5-db
+    image: mariadb:10.3
+    environment:
+      MYSQL_DATABASE: shopware5
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+      TZ: Europe/Berlin
+    volumes:
+      - ./config/mysql/generic.cnf:/etc/mysql/conf.d/001-generic.cnf:cached
+      - ./data/mysql/:/var/lib/mysql/:delegated
+      - ./log/mysql/:/var/log/mysql/:delegated

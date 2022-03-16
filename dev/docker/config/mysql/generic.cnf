@@ -1,0 +1,34 @@
+# @see https://mariadb.com/kb/en/library/configuring-mariadb-with-mycnf/
+# @see https://mariadb.com/kb/en/library/server-system-variables/
+
+[mysqld]
+
+# generic settings
+character_set_server=utf8
+collation_server=utf8_unicode_ci
+socket=/var/run/mysqld/mysqld.sock
+#sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+
+group_concat_max_len=2048
+innodb_buffer_pool_size=2GB
+query_cache_size=200MB
+
+[global]
+# set error log
+log_error=/var/log/mysql/error.log
+log_queries_not_using_indexes=1
+
+# set general log
+general_log=0
+general_log_file=/var/log/mysql/general.log
+
+# set slow query log
+log_slow_queries=1
+long_query_time=3
+slow_query_log_file=/var/log/mysql/slow-query.log
+
+# SQL error log
+# @see https://mariadb.com/kb/en/library/sql_error_log-plugin-system-variables/#sql_error_log_filename
+sql_error_log_filename=/var/log/mysql/errors.log
+sql_error_log_rotate=1
+sql_error_log_rotations=10
